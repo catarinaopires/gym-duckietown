@@ -79,83 +79,21 @@ Duckiebot-v0
 
 ## Installation
 
-Requirements:
-- Python 3.6+
-- OpenAI gym
-- NumPy
-- Pyglet
-- PyYAML
-- PyTorch
-
-You can install all the dependencies except PyTorch with `pip3`:
+You can install all the dependencies using Conda as follows:
 
 ```
-git clone https://github.com/duckietown/gym-duckietown.git
+git clone https://github.com/filipepcampos/gym-duckietown.git
 cd gym-duckietown
-pip3 install -e .
+conda create --name gym-duckietown python=3.8
+conda activate gym-duckietown
+pip install -e .
+pip install pyglet==1.5.11  # otherwise the simulator crashes
 ```
 
-Reinforcement learning code forked from [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
-is included under [/pytorch_rl](/pytorch_rl). If you wish to use this code, you
-should install [PyTorch](http://pytorch.org/).
-
-### Installation Using Conda (Alternative Method)
-
-Alternatively, you can install all the dependencies, including PyTorch, using Conda as follows. For those trying to use this package on MILA machines, this is the way to go:
+You will need to activate your Conda environment before running any of the scripts:
 
 ```
-git clone https://github.com/duckietown/gym-duckietown.git
-cd gym-duckietown
-conda env create -f environment.yaml
-```
-
-Please note that if you use Conda to install this package instead of pip, you will need to activate your Conda environment and add the package to your Python path before you can use it:
-
-```
-source activate gym-duckietown
-export PYTHONPATH="${PYTHONPATH}:`pwd`"
-```
-
-### Docker Image
-
-There is a pre-built Docker image available [on Docker Hub](https://hub.docker.com/r/duckietown/gym-duckietown), which also contains an installation of PyTorch.
-
-*Note that in order to get GPU acceleration, you should install and use [nvidia-docker 2.0](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)).*
-
-To get started, pull the `duckietown/gym-duckietown` image from Docker Hub and open a shell in the container:
-
-```
-nvidia-docker pull duckietown/gym-duckietown && \
-nvidia-docker run -it duckietown/gym-duckietown bash
-```
-
-Then create a virtual display:
-
-```
-Xvfb :0 -screen 0 1024x768x24 -ac +extension GLX +render -noreset &> xvfb.log &
-export DISPLAY=:0
-```
-
-Now, you are ready to start training a policy using RL:
-
-```
-python3 pytorch_rl/main.py \
-        --algo a2c \
-        --env-name Duckietown-loop_obstacles-v0 \
-        --lr 0.0002 \
-        --max-grad-norm 0.5 \
-        --no-vis \
-        --num-steps 20
-```
-
-If you need to do so, you can build a Docker image by running the following command from the root directory of this repository:
-
-```
-docker build . \
-       --file ./docker/standalone/Dockerfile \
-       --no-cache=true \
-       --network=host \
-       --tag <YOUR_TAG_GOES_HERE>
+conda activate gym-duckietown
 ```
 
 ## Usage
@@ -169,42 +107,6 @@ There is a simple UI application which allows you to control the simulation or r
 ```
 
 There is also a script to run automated tests (`run_tests.py`) and a script to gather performance metrics (`benchmark.py`).
-
-### Reinforcement Learning
-
-To train a reinforcement learning agent, you can use the code provided under [/pytorch_rl](/pytorch_rl). I recommend using the A2C or ACKTR algorithms. A sample command to launch training is:
-
-```
-python3 pytorch_rl/main.py --no-vis --env-name Duckietown-small_loop-v0 --algo a2c --lr 0.0002 --max-grad-norm 0.5 --num-steps 20
-```
-
-Then, to visualize the results of training, you can run the following command. Note that you can do this while the training process is still running. Also note that if you are running this through SSH, you will need to enable X forwarding to get a display:
-
-```
-python3 pytorch_rl/enjoy.py --env-name Duckietown-small_loop-v0 --num-stack 1 --load-dir trained_models/a2c
-```
-
-### Imitation Learning
-
-There is a script in the `experiments` directory which automatically generates a dataset of synthetic demonstrations. It uses hillclimbing to optimize the reward obtained, and outputs a JSON file:
-
-```
-experiments/gen_demos.py --map-name loop_obstacles
-```
-
-Then you can start training an imitation learning model (conv net) with:
-
-```
-experiments/train_imitation.py --map-name loop_obstacles
-```
-
-Finally, you can visualize what the trained model is doing with:
-
-```
-experiments/control_imitation.py --map-name loop_obstacles
-```
-
-Note that it is possible to have `gen_demos.py` and `train_imitate.py` running simultaneously, so that training takes place while new demonstrations are being generated. You can also run `control_imitate.py` periodically during training to check on learning progress.
 
 ## Design
 
@@ -335,19 +237,6 @@ It's possible to improve the performance of the simulator by disabling Pyglet er
 ```
 export PYGLET_DEBUG_GL=True
 ```
-
-### RL training doesn't converge
-
-Reinforcement learning algorithms are extremely sensitive to hyperparameters. Choosing the
-wrong set of parameters could prevent convergence completely, or lead to unstable performance over
-training. You will likely want to experiment. A learning rate that is too low can lead to no
-learning happening. A learning rate that is too high can lead unstable performance throughout
-training or a suboptimal result.
-
-The reward values are currently rescaled into the [0,1] range, because the RL code in
-`pytorch_rl` doesn't do reward clipping, and deals poorly with large reward values. Also
-note that changing the reward function might mean you also have to retune your choice
-of hyperparameters.
 
 ### Unknown encoder 'libx264' when using gym.wrappers.Monitor
 
